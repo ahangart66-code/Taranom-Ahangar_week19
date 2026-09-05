@@ -1,0 +1,98 @@
+/* register form card */
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+}
+
+.brand {
+  font-size: 16px;
+  font-weight: 500;
+  color: #282828;
+  margin-bottom: 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 460px;
+  background: #fff;
+  border-radius: 30px;
+  padding: 32px 30px 28px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.logo {
+  display: block;
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 8px;
+  object-fit: contain;
+}
+
+.card h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #282828;
+  margin-bottom: 24px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.input {
+  width: 100%;
+  height: 45px;
+  padding: 0 16px;
+  background: #f2f2f2;
+  border: none;
+  border-radius: 12px;
+  color: #282828;
+  font-size: 14px;
+  text-align: right;
+}
+
+.input::placeholder {
+  color: #a0a0a0;
+}
+
+.input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(85, 163, 255, 0.25);
+}
+
+.btn {
+  width: 100%;
+  height: 45px;
+  margin-top: 8px;
+  background: #55a3ff;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.btn:hover {
+  background: #3d8ff0;
+}
+
+.footer {
+  display: block;
+  margin-top: 20px;
+  font-size: 14px;
+  color: #55a3ff;
+  text-align: right;
+  text-decoration: none;
+}
+
+.footer:hover {
+  text-decoration: underline;
+}
