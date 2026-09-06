@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import closeIcon from "../../assets/close.png";
 import editIcon from "../../assets/edit.png";
 import filterIcon from "../../assets/filter.png";
@@ -17,6 +18,11 @@ function formatPrice(price) {
 }
 
 function Products() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
   const products = [
     { id: "90uf9g9h7895467g974", name: "تیشرت طرح انگولار", quantity: 293, price: 90000 },
     { id: "89dhf7g6h543210k321", name: "قهوه اسپرسو", quantity: 12, price: 320000 },
