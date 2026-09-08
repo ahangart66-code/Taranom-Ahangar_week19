@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../api.js";
-import logo from "../../assets/logo.png";
+import logo from "../assets/logo.png";
 import styles from "./Register.module.css";
 
 function Register() {
@@ -10,9 +11,22 @@ function Register() {
   const [password, setPassword] = useState("");
   const [passwordRepeat, setPasswordRepeat] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e) {
+  const registerMutation = useMutation({
+    mutationFn: () => registerUser(username, password),
+    onSuccess: () => {
+      navigate("/login");
+    },
+    onError: (err) => {
+      if (err.status === 400 || err.status === 409) {
+        setError("این نام کاربری قبلاً ثبت شده است.");
+        return;
+      }
+      setError("ثبت نام انجام نشد. مطمئن شو API روی پورت ۳۰۰۰ روشن است.");
+    },
+  });
+
+  function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
@@ -26,27 +40,7 @@ function Register() {
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const res = await registerUser(username, password);
-
-      if (res.ok) {
-        navigate("/login");
-        return;
-      }
-
-      if (res.status === 400 || res.status === 409) {
-        setError("این نام کاربری قبلاً ثبت شده است.");
-        return;
-      }
-
-      setError("ثبت نام انجام نشد. مطمئن شو API روی پورت ۳۰۰۰ روشن است.");
-    } catch {
-      setError("ارتباط با سرور برقرار نشد. API را روی localhost:3000 اجرا کن.");
-    } finally {
-      setLoading(false);
-    }
+    registerMutation.mutate();
   }
 
   return (
@@ -82,8 +76,8 @@ function Register() {
 
           {error ? <p className={styles.error}>{error}</p> : null}
 
-          <button type="submit" className={styles.btn} disabled={loading}>
-            {loading ? "در حال ثبت نام..." : "ثبت نام"}
+          <button type="submit" className={styles.btn} disabled={registerMutation.isPending}>
+            {registerMutation.isPending ? "در حال ثبت نام..." : "ثبت نام"}
           </button>
         </form>
 

@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../api.js";
-import logo from "../../assets/logo.png";
+import logo from "../assets/logo.png";
 import styles from "./Login.module.css";
 
 function Login() {
@@ -9,9 +10,24 @@ function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e) {
+  const loginMutation = useMutation({
+    mutationFn: () => loginUser(username, password),
+    onSuccess: (data) => {
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("username", username);
+      navigate("/products");
+    },
+    onError: (err) => {
+      if (err.status === 400 || err.status === 401) {
+        setError("نام کاربری یا رمز عبور اشتباه است. اول ثبت نام کنید.");
+        return;
+      }
+      setError("ورود انجام نشد. مطمئن شو API روی پورت ۳۰۰۰ روشن است.");
+    },
+  });
+
+  function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
@@ -20,29 +36,7 @@ function Login() {
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const res = await loginUser(username, password);
-
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem("token", data.token);
-        navigate("/products");
-        return;
-      }
-
-      if (res.status === 400 || res.status === 401) {
-        setError("نام کاربری یا رمز عبور اشتباه است. اول ثبت نام کنید.");
-        return;
-      }
-
-      setError("ورود انجام نشد. مطمئن شو API روی پورت ۳۰۰۰ روشن است.");
-    } catch {
-      setError("ارتباط با سرور برقرار نشد. API را روی localhost:3000 اجرا کن.");
-    } finally {
-      setLoading(false);
-    }
+    loginMutation.mutate();
   }
 
   return (
@@ -71,8 +65,8 @@ function Login() {
 
           {error ? <p className={styles.error}>{error}</p> : null}
 
-          <button type="submit" className={styles.btn} disabled={loading}>
-            {loading ? "در حال ورود..." : "ورود"}
+          <button type="submit" className={styles.btn} disabled={loginMutation.isPending}>
+            {loginMutation.isPending ? "در حال ورود..." : "ورود"}
           </button>
         </form>
 
