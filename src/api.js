@@ -19,7 +19,7 @@ function authHeader() {
 }
 
 export async function registerUser(username, password) {
-  const res = await fetch("/auth/register", {
+  const res = await fetch("/api/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
@@ -29,7 +29,7 @@ export async function registerUser(username, password) {
 }
 
 export async function loginUser(username, password) {
-  const res = await fetch("/auth/login", {
+  const res = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
@@ -38,20 +38,20 @@ export async function loginUser(username, password) {
   return handleResponse(res);
 }
 
-export async function getProducts(page, name) {
+export async function getProducts(page, name, limit = 6) {
   const params = new URLSearchParams();
   params.set("page", page);
-  params.set("limit", "6");
+  params.set("limit", String(limit));
   if (name) {
     params.set("name", name);
   }
 
-  const res = await fetch("/products?" + params.toString());
+  const res = await fetch("/api/products?" + params.toString());
   return handleResponse(res);
 }
 
 export async function createProduct(product) {
-  const res = await fetch("/products", {
+  const res = await fetch("/api/products", {
     method: "POST",
     headers: authHeader(),
     body: JSON.stringify(product),
@@ -61,10 +61,19 @@ export async function createProduct(product) {
 }
 
 export async function updateProduct({ id, product }) {
-  const res = await fetch("/products/" + id, {
+  const res = await fetch("/api/products/" + id, {
     method: "PUT",
     headers: authHeader(),
     body: JSON.stringify(product),
+  });
+
+  return handleResponse(res);
+}
+
+export async function deleteProduct(id) {
+  const res = await fetch("/api/products/" + id, {
+    method: "DELETE",
+    headers: authHeader(),
   });
 
   return handleResponse(res);

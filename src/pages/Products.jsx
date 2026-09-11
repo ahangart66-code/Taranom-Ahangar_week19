@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate } from "react-router-dom";
-import { createProduct, getProducts, updateProduct } from "../api.js";
+import { createProduct, deleteProduct, getProducts, updateProduct } from "../api.js";
 import closeIcon from "../assets/close.png";
 import editIcon from "../assets/edit.png";
 import filterIcon from "../assets/filter.png";
@@ -33,17 +33,33 @@ function Products() {
   const [error, setError] = useState("");
 
   const productsQuery = useQuery({
-    queryKey: ["products", page, search],
-    queryFn: () => getProducts(page, search),
+    queryKey: ["products", search],
+    queryFn: async () => {
+      const first = await getProducts(1, search, 6);
+      const total = first.totalProducts || 0;
+      const all =
+        total > 6 ? await getProducts(1, search, total) : first;
+      return {
+        ...all,
+        data: [...(all.data || [])].reverse(),
+      };
+    },
   });
 
-  const products = productsQuery.data?.data || [];
-  const totalPages = productsQuery.data?.totalPages || 1;
+  const pageSize = 6;
+  const allProducts = productsQuery.data?.data || [];
+  const totalPages = Math.max(1, Math.ceil(allProducts.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const products = allProducts.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   const createMutation = useMutation({
     mutationFn: createProduct,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      setPage(1);
       setModal("");
     },
     onError: (err) => {
@@ -67,6 +83,25 @@ function Products() {
         return;
       }
       setError("ویرایش محصول انجام نشد.");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      setModal("");
+      setSelected(null);
+      if (products.length === 1 && currentPage > 1) {
+        setPage(currentPage - 1);
+      }
+    },
+    onError: (err) => {
+      if (err.status === 401) {
+        setError("برای حذف محصول باید وارد شده باشید.");
+        return;
+      }
+      setError("حذف محصول انجام نشد.");
     },
   });
 
@@ -196,6 +231,7 @@ function Products() {
                         className={styles.iconBtn}
                         onClick={() => {
                           setSelected(item);
+                          setError("");
                           setModal("delete");
                         }}
                       >
@@ -214,7 +250,7 @@ function Products() {
             <button
               key={num}
               type="button"
-              className={page === num ? styles.pageActive : styles.pageBtn}
+              className={currentPage === num ? styles.pageActive : styles.pageBtn}
               onClick={() => setPage(num)}
             >
               {num}
@@ -318,11 +354,19 @@ function Products() {
           <div className={styles.deleteModal} onClick={(e) => e.stopPropagation()}>
             <img src={closeIcon} className={styles.closeIcon} />
             <p className={styles.deleteText}>آیا از حذف این محصول مطمئن هستید؟</p>
+            {error ? <p className={styles.error}>{error}</p> : null}
             <div className={styles.deleteActions}>
-              <button className={`${styles.btn} ${styles.red}`} onClick={() => setModal("")}>
-                حذف
+              <button
+                className={`${styles.btn} ${styles.red}`}
+                disabled={deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate(selected.id)}
+              >
+                {deleteMutation.isPending ? "در حال حذف..." : "حذف"}
               </button>
-              <button className={`${styles.btn} ${styles.gray}`} onClick={() => setModal("")}>
+              <button
+                className={`${styles.btn} ${styles.gray}`}
+                onClick={() => setModal("")}
+              >
                 لغو
               </button>
             </div>
