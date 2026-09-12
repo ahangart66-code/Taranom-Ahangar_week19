@@ -47,6 +47,17 @@ export async function getProducts(page, name, limit = 6) {
   }
 
   const res = await fetch("/api/products?" + params.toString());
+
+  if (name && (res.status === 400 || res.status === 404)) {
+    return {
+      totalProducts: 0,
+      page,
+      limit,
+      totalPages: 0,
+      data: [],
+    };
+  }
+
   return handleResponse(res);
 }
 

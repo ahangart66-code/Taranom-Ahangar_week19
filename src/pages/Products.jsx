@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate } from "react-router-dom";
 import { createProduct, deleteProduct, getProducts, updateProduct } from "../api.js";
@@ -24,6 +24,7 @@ function Products() {
 
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [modal, setModal] = useState("");
   const [selected, setSelected] = useState(null);
@@ -32,13 +33,22 @@ function Products() {
   const [price, setPrice] = useState("");
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const productsQuery = useQuery({
-    queryKey: ["products", search],
+    queryKey: ["products", debouncedSearch],
     queryFn: async () => {
-      const first = await getProducts(1, search, 6);
+      const first = await getProducts(1, debouncedSearch, 6);
       const total = first.totalProducts || 0;
       const all =
-        total > 6 ? await getProducts(1, search, total) : first;
+        total > 6 ? await getProducts(1, debouncedSearch, total) : first;
       return {
         ...all,
         data: [...(all.data || [])].reverse(),
@@ -164,10 +174,7 @@ function Products() {
             type="text"
             placeholder="جستجو کالا"
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
@@ -206,9 +213,25 @@ function Products() {
               <tr>
                 <td colSpan="5">در حال بارگذاری...</td>
               </tr>
+            ) : productsQuery.isError ? (
+              <tr>
+                <td colSpan="5" className={styles.tableError}>
+                  <p>بارگذاری محصولات انجام نشد. مطمئن شو API روی پورت ۳۰۰۰ روشن است.</p>
+                  <button
+                    type="button"
+                    className={styles.btn}
+                    onClick={() => productsQuery.refetch()}
+                    disabled={productsQuery.isFetching}
+                  >
+                    {productsQuery.isFetching ? "در حال تلاش..." : "تلاش دوباره"}
+                  </button>
+                </td>
+              </tr>
             ) : products.length === 0 ? (
               <tr>
-                <td colSpan="5">محصولی پیدا نشد</td>
+                <td colSpan="5">
+                  {debouncedSearch ? "نتیجه ای یافت نشد" : "محصولی پیدا نشد"}
+                </td>
               </tr>
             ) : (
               products.map((item) => (
@@ -245,18 +268,20 @@ function Products() {
           </tbody>
         </table>
 
-        <div className={styles.pagination}>
-          {pages.map((num) => (
-            <button
-              key={num}
-              type="button"
-              className={currentPage === num ? styles.pageActive : styles.pageBtn}
-              onClick={() => setPage(num)}
-            >
-              {num}
-            </button>
-          ))}
-        </div>
+        {!productsQuery.isLoading && !productsQuery.isError && products.length > 0 ? (
+          <div className={styles.pagination}>
+            {pages.map((num) => (
+              <button
+                key={num}
+                type="button"
+                className={currentPage === num ? styles.pageActive : styles.pageBtn}
+                onClick={() => setPage(num)}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {modal === "add" && (
